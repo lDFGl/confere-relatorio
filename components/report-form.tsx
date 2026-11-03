@@ -2,21 +2,52 @@
 
 import { useState } from 'react';
 
-const initialForm = {
-  company: 'Empresa ABC',
-  reportTitle: 'Relatório de auditoria interna - Processo de compras',
-  reportText: `A empresa realizou auditoria interna no processo de compras durante o ano de 2024. O setor concluiu que os controles são adequados e não houveram não conformidades relevantes. Foram levantados apenas pontos de melhoria no prazo de aprovação de pedidos e no registro de evidências.`,
-  standards: 'ISO 9001, Lei Geral de Proteção de Dados (LGPD), COSO',
-  additionalData: 'Foram analisados 86 pedidos de compra, 18 fornecedores e 14 evidências de aprovação. O processo de compras é centralizado pela área financeira e os pendentes foram acompanhados por controle mensal.',
+type ReviewResult = {
+  executiveSummary: string;
+  conformityStatus: string;
+  structuralAnalysis: string;
+  technicalAnalysis: string;
+  findings: string[];
+  recommendations: string[];
+  revisedText: string;
+  pointsToConfirm: string[];
+  standardsCaveat: string;
 };
 
-export default function ReportForm() {
-  const [form, setForm] = useState(initialForm);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState('');
+const emptyForm = {
+  company: '',
+  reportTitle: '',
+  auditType: 'Auditoria interna',
+  standards: 'Normas Globais de Auditoria Interna (IIA), COSO e normas/legislação aplicáveis ao objeto auditado',
+  reportText: '',
+  additionalData: '',
+  referenceModel: '',
+  reviewInstructions: 'Preservar integralmente os fatos, valores e evidências. Manter o padrão institucional do modelo de referência. Não inventar informações.',
+};
 
-  const handleChange = (field: string, value: string) => {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return <label className="grid gap-2 text-sm font-semibold text-slate-700">
+    {label}
+    {children}
+    {hint && <span className="text-xs font-normal leading-5 text-slate-500">{hint}</span>}
+  </label>;
+}
+
+function OutputSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="rounded-2xl border border-slate-200 bg-white p-5">
+    <h3 className="mb-3 text-base font-bold text-slate-900">{title}</h3>
+    <div className="whitespace-pre-wrap text-sm leading-7 text-slate-700">{children}</div>
+  </section>;
+}
+
+export default function ReportForm() {
+  const [form, setForm] = useState(emptyForm);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<ReviewResult | null>(null);
+  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<'review' | 'revision'>('review');
+
+  const handleChange = (field: keyof typeof emptyForm, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -24,150 +55,108 @@ export default function ReportForm() {
     event.preventDefault();
     setLoading(true);
     setError('');
+    setResult(null);
 
     try {
       const response = await fetch('/api/review', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao processar o relatório');
-      }
-
+      if (!response.ok) throw new Error(data.error || 'Erro ao processar o relatório.');
       setResult(data);
+      setActiveTab('review');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro inesperado');
+      setError(err instanceof Error ? err.message : 'Erro inesperado.');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-      <form onSubmit={handleSubmit} className="rounded-3xl bg-white p-6 shadow-soft sm:p-8">
-        <div className="mb-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">Novo projeto</p>
-          <h2 className="mt-2 text-2xl font-bold text-slate-900">Dados do relatório</h2>
-        </div>
+  const copyRevision = async () => {
+    if (!result?.revisedText) return;
+    await navigator.clipboard.writeText(result.revisedText);
+  };
 
-        <div className="grid gap-5">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Empresa / unidade
-            <input
-              value={form.company}
-              onChange={(e) => handleChange('company', e.target.value)}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base outline-none ring-0 transition focus:border-blue-500 focus:bg-white"
-            />
-          </label>
+  const inputClass = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-800 outline-none transition focus:border-teal-600 focus:bg-white focus:ring-2 focus:ring-teal-100';
+  const textClass = inputClass + ' resize-y leading-6';
 
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Título do relatório
-            <input
-              value={form.reportTitle}
-              onChange={(e) => handleChange('reportTitle', e.target.value)}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base outline-none transition focus:border-blue-500 focus:bg-white"
-            />
-          </label>
+  return <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
+    <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Novo trabalho</p>
+        <h2 className="mt-2 text-2xl font-bold text-slate-900">Revisão de relatório</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">Informe o documento, as evidências e, principalmente, um relatório aprovado que servirá como referência de estrutura e linguagem.</p>
+      </div>
 
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Normas e legislação aplicáveis
-            <input
-              value={form.standards}
-              onChange={(e) => handleChange('standards', e.target.value)}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base outline-none transition focus:border-blue-500 focus:bg-white"
-            />
-          </label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Empresa / unidade">
+          <input className={inputClass} value={form.company} onChange={(e) => handleChange('company', e.target.value)} placeholder="Ex.: FG Empreendimentos" />
+        </Field>
+        <Field label="Tipo de auditoria">
+          <select className={inputClass} value={form.auditType} onChange={(e) => handleChange('auditType', e.target.value)}>
+            <option>Auditoria interna</option><option>Auditoria de processos</option><option>Auditoria operacional</option><option>Auditoria de conformidade</option><option>Auditoria de obras</option><option>Auditoria patrimonial</option><option>Outro</option>
+          </select>
+        </Field>
+      </div>
 
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Texto do relatório de auditoria
-            <textarea
-              value={form.reportText}
-              onChange={(e) => handleChange('reportText', e.target.value)}
-              rows={10}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base outline-none transition focus:border-blue-500 focus:bg-white"
-            />
-          </label>
+      <Field label="Título do relatório">
+        <input className={inputClass} value={form.reportTitle} onChange={(e) => handleChange('reportTitle', e.target.value)} placeholder="Título conforme padrão institucional" />
+      </Field>
 
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Dados adicionais / evidências / observações
-            <textarea
-              value={form.additionalData}
-              onChange={(e) => handleChange('additionalData', e.target.value)}
-              rows={6}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base outline-none transition focus:border-blue-500 focus:bg-white"
-            />
-          </label>
-        </div>
+      <Field label="Relatório ou trecho a revisar" hint="Cole o conteúdo integral ou a seção que deseja revisar. Não inclua dados pessoais desnecessários.">
+        <textarea required minLength={30} rows={12} className={textClass} value={form.reportText} onChange={(e) => handleChange('reportText', e.target.value)} placeholder="Cole aqui o relatório, achado, recomendação ou seção que deseja revisar..." />
+      </Field>
 
-        <div className="mt-6 flex items-center justify-between gap-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-          >
-            {loading ? 'Revisando relatório...' : 'Revisar com IA'}
-          </button>
+      <Field label="Modelo institucional aprovado" hint="Cole um relatório já aprovado. A IA usará este conteúdo para aprender estrutura, títulos, sequência, linguagem e padrão de recomendações — não para copiar fatos.">
+        <textarea rows={8} className={textClass} value={form.referenceModel} onChange={(e) => handleChange('referenceModel', e.target.value)} placeholder="Cole aqui o conteúdo de um relatório aprovado como referência..." />
+      </Field>
 
-          <span className="text-sm text-slate-500">Baseado em normas + legislação + dados adicionais</span>
-        </div>
+      <Field label="Normas e critérios aplicáveis" hint="Informe normas, procedimentos internos, legislação, versões ou dispositivos que devem ser considerados.">
+        <textarea rows={3} className={textClass} value={form.standards} onChange={(e) => handleChange('standards', e.target.value)} />
+      </Field>
 
-        {error ? (
-          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
-        ) : null}
-      </form>
+      <Field label="Evidências e contexto complementar" hint="Inclua amostras, valores, datas, sistemas, documentos examinados e esclarecimentos da área auditada.">
+        <textarea rows={5} className={textClass} value={form.additionalData} onChange={(e) => handleChange('additionalData', e.target.value)} placeholder="Dados adicionais, evidências, memória de cálculo e contexto..." />
+      </Field>
 
-      <aside className="rounded-3xl bg-slate-900 p-6 text-white shadow-soft sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-200">Resultado da IA</p>
-        {result ? (
-          <div className="mt-5 space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold">Resumo executivo</h3>
-              <p className="mt-2 text-sm leading-7 text-slate-200">{result.executiveSummary}</p>
-            </div>
+      <Field label="Orientações específicas para esta revisão">
+        <textarea rows={3} className={textClass} value={form.reviewInstructions} onChange={(e) => handleChange('reviewInstructions', e.target.value)} />
+      </Field>
 
-            <div>
-              <h3 className="text-lg font-semibold">Status de conformidade</h3>
-              <div className="mt-2 rounded-xl bg-slate-800 p-3 text-sm font-medium text-blue-200">
-                {result.conformityStatus}
-              </div>
-            </div>
+      {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">{error}</div>}
 
-            <div>
-              <h3 className="text-lg font-semibold">Principais achados</h3>
-              <ul className="mt-2 space-y-2 text-sm text-slate-200">
-                {result.findings.map((finding: string) => (
-                  <li key={finding} className="flex gap-2">
-                    <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-400" />
-                    <span>{finding}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+      <button type="submit" disabled={loading || form.reportText.trim().length < 30} className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 px-5 py-4 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300">
+        {loading ? 'Analisando conteúdo e modelo...' : 'Revisar relatório com IA'}
+      </button>
+      <p className="text-center text-xs text-slate-500">A revisão é uma minuta técnica. A validação e aprovação final permanecem sob responsabilidade do auditor.</p>
+    </form>
 
-            <div>
-              <h3 className="text-lg font-semibold">Recomendações</h3>
-              <ul className="mt-2 space-y-2 text-sm text-slate-200">
-                {result.recommendations.map((rec: string) => (
-                  <li key={rec} className="flex gap-2">
-                    <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                    <span>{rec}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-10 rounded-2xl border border-slate-700 bg-slate-800/60 p-4 text-sm leading-7 text-slate-300">
-            Envie o relatório para que a IA identifique riscos, lacunas, conformidades e propostas de melhoria com base em normas e legislação.
-          </div>
-        )}
-      </aside>
-    </div>
-  );
+    <aside className="space-y-4 xl:sticky xl:top-5">
+      <div className="rounded-3xl bg-slate-900 p-5 text-white shadow-sm sm:p-6">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-300">Assistente de auditoria</p>
+        <h2 className="mt-2 text-xl font-bold">Resultado da análise</h2>
+        {result ? <div className="mt-4 flex gap-2">
+          <button type="button" onClick={() => setActiveTab('review')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${activeTab === 'review' ? 'bg-white text-slate-900' : 'bg-slate-800 text-slate-300'}`}>Diagnóstico</button>
+          <button type="button" onClick={() => setActiveTab('revision')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${activeTab === 'revision' ? 'bg-white text-slate-900' : 'bg-slate-800 text-slate-300'}`}>Texto revisado</button>
+        </div> : <p className="mt-3 text-sm leading-6 text-slate-300">O diagnóstico técnico, as recomendações e a versão revisada aparecerão aqui após o processamento.</p>}
+      </div>
+
+      {result && activeTab === 'review' && <>
+        <OutputSection title="Resumo executivo">{result.executiveSummary}</OutputSection>
+        <OutputSection title="Avaliação de conformidade">{result.conformityStatus}</OutputSection>
+        <OutputSection title="Análise estrutural">{result.structuralAnalysis}</OutputSection>
+        <OutputSection title="Análise técnica">{result.technicalAnalysis}</OutputSection>
+        <OutputSection title="Achados identificados">{result.findings.length ? result.findings.map((x, i) => `${i + 1}. ${x}`).join('\n\n') : 'Nenhum achado adicional identificado.'}</OutputSection>
+        <OutputSection title="Recomendações">{result.recommendations.length ? result.recommendations.join('\n\n') : 'Não foram propostas recomendações adicionais.'}</OutputSection>
+        <OutputSection title="Pontos que exigem confirmação">{result.pointsToConfirm.length ? result.pointsToConfirm.map((x, i) => `${i + 1}. ${x}`).join('\n\n') : 'Nenhum ponto adicional sinalizado.'}</OutputSection>
+        <OutputSection title="Ressalvas normativas">{result.standardsCaveat || 'Nenhuma ressalva adicional.'}</OutputSection>
+      </>}
+
+      {result && activeTab === 'revision' && <OutputSection title="Texto revisado">{result.revisedText || 'A IA não retornou uma versão revisada.'}
+        <button type="button" onClick={copyRevision} className="mt-4 rounded-lg bg-teal-700 px-4 py-2 text-xs font-bold text-white hover:bg-teal-800">Copiar texto revisado</button>
+      </OutputSection>}
+    </aside>
+  </div>;
 }

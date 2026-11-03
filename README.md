@@ -1,70 +1,45 @@
 # Confere Relatório
 
-Plataforma web com IA para revisar e refazer relatórios de auditoria interna com base em:
+Assistente de IA para revisão técnica de relatórios de auditoria interna, com preservação de modelos institucionais aprovados.
 
-- normas e legislações aplicáveis
-- evidências e dados adicionais enviados pelo usuário
-- contexto operacional e riscos do processo auditado
+## O que faz
 
-## Objetivo
+- Analisa estrutura, linguagem, coerência e consistência técnica do relatório.
+- Usa um relatório aprovado como referência de estrutura e estilo.
+- Relaciona achados, evidências, riscos, critérios e recomendações.
+- Preserva fatos, valores, datas e referências fornecidos.
+- Sinaliza lacunas, contradições e pontos normativos que exigem confirmação.
+- Produz diagnóstico e minuta revisada.
 
-A solução permite ao usuário enviar um relatório, selecionar os critérios normativos e complementar com informações relevantes, e receber uma revisão técnica com:
+## Configuração
 
-- resumo executivo
-- status de conformidade
-- achados
-- recomendações
-- texto revisado e reescrito
+Requisitos: Node.js 20+ e uma chave de API da OpenAI.
 
-## Stack sugerida
+1. Instale as dependências: `npm install`
+2. Crie um arquivo `.env.local` na raiz:
+   ```env
+   OPENAI_API_KEY=sua_chave
+   OPENAI_MODEL=gpt-4.1-mini
+   ```
+3. Execute: `npm run dev`
+4. Acesse `http://localhost:3000`
 
-- Frontend: Next.js + TypeScript + Tailwind CSS
-- Backend: API Routes do Next.js
-- IA: integração com OpenAI / Anthropic / Azure OpenAI
-- Armazenamento: PostgreSQL + Supabase ou Neon
-- Uploads: PDF / DOCX / TXT
-- Exportação: PDF, DOCX e HTML
+Na hospedagem, configure `OPENAI_API_KEY` e opcionalmente `OPENAI_MODEL` nas variáveis de ambiente do servidor. Nunca coloque a chave no código do navegador, no repositório ou em variáveis `NEXT_PUBLIC_*`.
 
-## Estrutura do MVP
+## Como usar o modelo de referência
 
-```bash
-app/
-  api/
-    review/
-      route.ts
-  globals.css
-  layout.tsx
-  page.tsx
-components/
-  report-form.tsx
-lib/
-  review-engine.ts
-```
+Cole no campo "Modelo institucional aprovado" o conteúdo de um relatório já validado. A IA deve usar esse material para reproduzir estrutura, sequência, nomenclatura e linguagem, sem transportar dados ou conclusões do documento de referência para o novo trabalho.
 
-## Como executar localmente
+Nesta versão, a referência é enviada junto com cada revisão e não fica armazenada como memória permanente. O armazenamento de uma biblioteca institucional de modelos, com versões, aprovação e seleção por tipo de auditoria, é uma próxima etapa.
 
-```bash
-npm install
-npm run dev
-```
+## Limites e governança
 
-Acesse `http://localhost:3000`.
+- A IA não substitui a validação do auditor.
+- Informar uma norma no formulário não comprova sua vigência ou aplicabilidade.
+- A ferramenta não deve inventar artigos, requisitos, evidências ou cálculos.
+- Para revisão normativa conclusiva, forneça os textos oficiais, versões e procedimentos internos pertinentes.
+- Evite inserir dados pessoais ou informações confidenciais que não sejam necessários à análise.
 
-## Observação importante
+## Stack
 
-Este MVP já possui uma engine de revisão local, pronta para ser substituída por uma integração real com IA quando houver a chave da API do provedor escolhido.
-
-## Próximos passos sugeridos
-
-1. Conectar com OpenAI ou Anthropic
-2. Implementar upload de arquivos PDF/DOCX
-3. Persistir projetos e histórico de versões
-4. Gerar relatório final em formato Word/PDF
-5. Adicionar autenticação e segregação por usuário
-
-## Melhorias futuras
-
-- painel analítico por processo, unidade e risco
-- checklist de conformidade por norma
-- comparação entre versão original e revisada
-- auditoria de aprovação e rastreabilidade de alterações
+Next.js 14, React 18, TypeScript, Tailwind CSS e integração server-side com a API da OpenAI.
