@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "tsx --test tests/math-audit.test.ts"
   },
   "dependencies": {
     "mammoth": "1.9.0",
@@ -14,9 +15,11 @@
     "pdf-parse": "1.1.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "xlsx": "0.18.5"
+    "xlsx": "0.18.5",
+    "docx": "8.5.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "2.1.4",
     "@types/node": "20.14.10",
     "@types/pdf-parse": "1.1.4",
     "@types/react": "18.3.3",
@@ -26,6 +29,7 @@
     "eslint-config-next": "14.2.15",
     "postcss": "8.4.39",
     "tailwindcss": "3.4.10",
-    "typescript": "5.5.3"
+    "typescript": "5.5.3",
+    "tsx": "4.19.2"
   }
 }
