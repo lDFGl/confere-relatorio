@@ -13,6 +13,10 @@ function textField(form: FormData, key: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  if (origin && origin !== request.nextUrl.origin) {
+    return NextResponse.json({ error: 'Origem não autorizada.' }, { status: 403 });
+  }
   if (!isValidSession(request.cookies.get(SESSION_COOKIE)?.value)) {
     return NextResponse.json({ error: 'Sessão expirada. Entre novamente.' }, { status: 401, headers: { 'Cache-Control': 'no-store' } });
   }
