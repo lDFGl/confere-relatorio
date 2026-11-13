@@ -97,8 +97,7 @@ Faça uma conferência cruzada entre todos os conteúdos. Para cada divergência
   });
 
   if (!response.ok) {
-    const detail = await response.text();
-    // Não registrar corpo de resposta do provedor: pode conter conteúdo operacional sensível.
+    // Não ler nem registrar o corpo de erro do provedor: pode conter conteúdo operacional sensível.
     throw new Error(response.status === 401
       ? 'A chave da IA foi rejeitada. Verifique OPENAI_API_KEY.'
       : 'A IA não conseguiu concluir a revisão. Verifique a configuração e tente novamente.');
