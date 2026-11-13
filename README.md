@@ -42,7 +42,7 @@ Requisitos: Node.js 20+ e chave de API da OpenAI.
 4. Execute `npm run dev`.
 5. Acesse `http://localhost:3000` e entre com a senha definida em `APP_ACCESS_PASSWORD`.
 
-Gere o segredo de sessão com um gerador criptograficamente seguro (por exemplo, `openssl rand -base64 48`). Não reutilize a senha da conta corporativa. Não envie `.env.local) ao GitHub.
+Gere o segredo de sessão com um gerador criptograficamente seguro (por exemplo, `openssl rand -base64 48`). Não reutilize a senha da conta corporativa. Não envie `.env.local` ao GitHub.
 
 ## Segurança implementada nesta fase
 
