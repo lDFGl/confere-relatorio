@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Document, HeadingLevel, Packer, Paragraph, TextRun } from 'docx';
 
 type ReviewResult = {
   executiveSummary: string;
@@ -13,6 +14,7 @@ type ReviewResult = {
   pointsToConfirm: string[];
   standardsCaveat: string;
   uploadedFiles?: { name: string; role: string; characters: number }[];
+  originalText?: string;
 };
 
 const emptyForm = {
@@ -108,6 +110,24 @@ export default function ReportForm() {
     }
   };
 
+  const downloadDocx = async () => {
+    if (!result?.revisedText) return;
+    const paragraphs = result.revisedText.split(/\r?\n/).map((line) => new Paragraph({
+      heading: /^\s*\d+(?:\.\d+)*\s+/.test(line) ? HeadingLevel.HEADING_2 : undefined,
+      children: [new TextRun({ text: line || ' ', bold: /^\s*(?:Recomendação da AI:|\d+(?:\.\d+)*\s+)/i.test(line) })],
+      spacing: { after: 120 },
+    }));
+    const doc = new Document({ sections: [{ properties: {}, children: [
+      new Paragraph({ text: form.reportTitle || 'Relatório revisado', heading: HeadingLevel.TITLE }),
+      new Paragraph({ text: 'Minuta gerada com apoio de IA — requer validação do auditor.' }),
+      ...paragraphs,
+    ] }] });
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a'); link.href = url; link.download = 'relatorio-revisado.docx'; link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const copyRevision = async () => {
     if (!result?.revisedText) return;
     await navigator.clipboard.writeText(result.revisedText);
@@ -200,9 +220,17 @@ export default function ReportForm() {
         <OutputSection title="Ressalvas normativas">{result.standardsCaveat || 'Nenhuma ressalva adicional.'}</OutputSection>
       </>}
 
-      {result && activeTab === 'revision' && <OutputSection title="Texto revisado">{result.revisedText || 'A IA não retornou uma versão revisada.'}
-        <button type="button" onClick={copyRevision} className="mt-4 rounded-lg bg-teal-700 px-4 py-2 text-xs font-bold text-white hover:bg-teal-800">Copiar texto revisado</button>
-      </OutputSection>}
+      {result && activeTab === 'revision' && <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={copyRevision} className="rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold text-white hover:bg-slate-700">Copiar texto revisado</button>
+          <button type="button" onClick={downloadDocx} className="rounded-lg bg-teal-700 px-4 py-2 text-xs font-bold text-white hover:bg-teal-800">Baixar em DOCX</button>
+        </div>
+        <div className="grid gap-4 2xl:grid-cols-2">
+          <OutputSection title="Original enviado">{result.originalText || form.reportText || 'O conteúdo original não foi disponibilizado para comparação.'}</OutputSection>
+          <OutputSection title="Versão revisada pela IA">{result.revisedText || 'A IA não retornou uma versão revisada.'}</OutputSection>
+        </div>
+        <p className="text-xs text-slate-500">Compare as duas versões antes de aproveitar a minuta. A exportação DOCX não representa aprovação do conteúdo.</p>
+      </div>}
     </aside>
   </div>;
 }

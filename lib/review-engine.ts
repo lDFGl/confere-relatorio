@@ -93,11 +93,11 @@ Faça uma conferência cruzada entre todos os conteúdos. Para cada divergência
       ],
     }),
     cache: 'no-store',
+    signal: AbortSignal.timeout(90000),
   });
 
   if (!response.ok) {
-    const detail = await response.text();
-    console.error('OpenAI API error:', response.status, detail.slice(0, 1000));
+    // Não ler nem registrar o corpo de erro do provedor: pode conter conteúdo operacional sensível.
     throw new Error(response.status === 401
       ? 'A chave da IA foi rejeitada. Verifique OPENAI_API_KEY.'
       : 'A IA não conseguiu concluir a revisão. Verifique a configuração e tente novamente.');
@@ -107,7 +107,10 @@ Faça uma conferência cruzada entre todos os conteúdos. Para cada divergência
   const content = data.choices?.[0]?.message?.content;
   if (!content) throw new Error('A IA retornou uma resposta vazia.');
 
-  const parsed = JSON.parse(content);
+  let parsed: Partial<AuditReviewResult>;
+  try { parsed = JSON.parse(content) as Partial<AuditReviewResult>; }
+  catch { throw new Error('A IA retornou um formato inválido. Tente novamente.'); }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('A IA retornou uma estrutura de dados inválida.');
   return {
     executiveSummary: String(parsed.executiveSummary || ''),
     conformityStatus: String(parsed.conformityStatus || 'Não foi possível classificar'),
