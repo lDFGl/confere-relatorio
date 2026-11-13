@@ -98,7 +98,7 @@ Faça uma conferência cruzada entre todos os conteúdos. Para cada divergência
 
   if (!response.ok) {
     const detail = await response.text();
-    console.error('OpenAI API error:', response.status, detail.slice(0, 1000));
+    // Não registrar corpo de resposta do provedor: pode conter conteúdo operacional sensível.
     throw new Error(response.status === 401
       ? 'A chave da IA foi rejeitada. Verifique OPENAI_API_KEY.'
       : 'A IA não conseguiu concluir a revisão. Verifique a configuração e tente novamente.');
