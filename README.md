@@ -77,7 +77,7 @@ O GitHub Actions executa lint, testes automatizados e build. A aprovação do PR
 
 1. Trocar a senha compartilhada por autenticação corporativa (SSO/MFA) e autorização por perfil.
 2. Rate limiting persistente, monitoramento e trilha de auditoria sem conteúdo sensível.
-3. Revisar/substituir dependências de leitura de planilhas e PDF e executar auditoria de dependências.
+3. Manter SheetJS na distribuição oficial 0.20.3 (não usar o pacote npm desatualizado 0.18.5) e executar auditoria recorrente das dependências.
 4. OCR para PDF digitalizado e imagens.
 5. Biblioteca de modelos e normas com versionamento e aprovação.
 6. Histórico controlado, política de retenção e exclusão verificável.
